@@ -13,11 +13,13 @@ module.exports = {
 
     SAVE_SUCCESS: "데이터 저장 성공",
     SAVE_FAIL: "데이터 저장 실패",
-    READ_FAIL: "데이터 저장 실패",
+    READ_FAIL: "데이터 조회 실패",
 
     STUDENT_SELECT_SUCCESS: "학생 조회 성공",
     NO_STUDENT: "존재하지 않는 학생입니다",
     STUDENT_SELECT_FAIL: "학생 조회 실패",
 
     BOARD_SELECT_SUCCESS: "게시글 조회 성공",
+    NO_BOARD: "존재하지 않는 게시글입니다.",
+    BOARD_DELETE_SUCCESS: "데이터 삭제 성공",
 };

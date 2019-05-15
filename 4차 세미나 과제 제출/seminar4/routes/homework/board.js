@@ -17,7 +17,7 @@ router.get('/:idx', (req, res) => {
     pool.getConnection((err, connection) => {
         connection.query(selectWomenQuery, [req.params.idx], (err, result) => {
             if (err) {
-                res.status(200).send(util.successFalse(statusCode.INTERNAL_SERVER_ERROR, resMessage.SAVE_FAIL));
+                res.status(200).send(util.successFalse(statusCode.INTERNAL_SERVER_ERROR, resMessage.READ_FAIL));
             } else {
                 delete result[0].boardPW;
                 delete result[0].salt;
@@ -36,7 +36,7 @@ router.get('/', (req, res) => {
     pool.getConnection((err, connection) => {
         connection.query(selectWomenQuery, (err, result) => {
             if (err) {
-                res.status(200).send(util.successFalse(statusCode.INTERNAL_SERVER_ERROR, resMessage.SAVE_FAIL));
+                res.status(200).send(util.successFalse(statusCode.INTERNAL_SERVER_ERROR, resMessage.READ_FAIL));
             } else {
                 for (var i = 0; i < result.length; i++) {
                     delete result[i].boardPW;
@@ -80,6 +80,47 @@ router.post('/', async (req, res) => {
 
                 connection.release();
                 res.status(200).send(util.successTrue(statusCode.OK, resMessage.SAVE_SUCCESS, boardInfo));
+            }
+        });
+    });
+});
+
+router.delete('/', async (req, res) => {
+    const selectWomenQuery = 'SELECT * FROM board WHERE boardIdx = ?';
+
+    const boardDelete = {
+        boardIdx: req.body.boardIdx,
+        boardPW: req.body.boardPW,
+    }
+    pool.getConnection((err, connection) => {
+        connection.query(selectWomenQuery, [boardDelete.boardIdx], async (err, result) => {
+            if (err) {
+                res.status(200).send(util.successFalse(statusCode.INTERNAL_SERVER_ERROR, resMessage.READ_FAIL));
+            } else {
+                if (result[0] == null) {
+                    res.status(200).send(util.successTrue(statusCode.OK, resMessage.NO_BOARD));
+                } else {
+                    const salt = result[0].salt;
+                    const hashedPW = await crypto.pbkdf2(boardDelete.boardPW.toString(), salt.toString('base64'), 1000, 32, 'SHA512');
+                    boardDelete.boardPW = hashedPW.toString('base64');
+
+                    if (result[0].boardPW == boardDelete.boardPW) {
+                        const deleteBoardQuery = 'DELETE FROM board WHERE boardIdx = ?';
+
+                        pool.getConnection((err, connection) => {
+                            connection.query(deleteBoardQuery, [boardDelete.boardIdx], async (err, result) => {
+                                if (err) {
+                                    res.status(200).send(util.successFalse(statusCode.INTERNAL_SERVER_ERROR, resMessage.READ_FAIL));
+                                } else {
+                                    res.status(200).send(util.successTrue(statusCode.OK, resMessage.BOARD_DELETE_SUCCESS));
+                                    connection.release();
+                                }
+                            });
+                        });
+                    } else {
+                        res.status(200).send(util.successTrue(statusCode.OK, resMessage.MISS_MATCH_PW));
+                    }
+                }
             }
         });
     });
